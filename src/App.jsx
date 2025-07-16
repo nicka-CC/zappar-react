@@ -1,43 +1,83 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-// Добавляем импорты для AR
-import { Canvas } from '@react-three/fiber'
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
-import { useLoader } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
-import { ZapparCamera, ZapparCanvas, ImageTracker, ImageAnchor } from 'zappar-react-three-fiber'
+import { useEffect, useRef } from 'react';
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import * as ZapparThree from '@zappar/zappar-threejs';
+import './App.css';
 
-function Model() {
-  const gltf = useLoader(GLTFLoader, '/src/Cate2.glb');
-  return <primitive object={gltf.scene} scale={1.5} />
+function ARZappar() {
+  const mountRef = useRef();
+
+  useEffect(() => {
+    let renderer, scene, camera, zapparCamera, model;
+    let frameId;
+    let imageTracker, imageAnchorGroup;
+
+    // Renderer
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight * 0.7);
+    mountRef.current.appendChild(renderer.domElement);
+
+    // Scene
+    scene = new THREE.Scene();
+
+    // Zappar camera
+    zapparCamera = new ZapparThree.Camera();
+    camera = zapparCamera;
+    scene.add(camera);
+
+    // Свет
+    const light = new THREE.AmbientLight(0xffffff, 1);
+    scene.add(light);
+
+    // Трекинг по изображению (можно убрать, если не нужен)
+    // imageTracker = new ZapparThree.ImageTrackerLoader().load('PATH_TO_YOUR_IMAGE_TRACKER');
+    // imageAnchorGroup = new ZapparThree.ImageAnchorGroup(zapparCamera, imageTracker);
+    // scene.add(imageAnchorGroup);
+
+    // Загрузка модели
+    const loader = new GLTFLoader();
+    loader.load('/src/Cate2.glb', (gltf) => {
+      model = gltf.scene;
+      model.scale.set(1.5, 1.5, 1.5);
+      model.position.set(0, 0, -5); // Перед камерой
+      scene.add(model);
+    });
+
+    // Запуск камеры
+    ZapparThree.permissionRequestUI().then((granted) => {
+      if (granted) {
+        ZapparThree.permissionGrantedUI();
+        zapparCamera.start();
+      } else {
+        ZapparThree.permissionDeniedUI();
+      }
+    });
+
+    // Анимация
+    const animate = () => {
+      zapparCamera.updateFrame();
+      renderer.render(scene, camera);
+      frameId = requestAnimationFrame(animate);
+    };
+    animate();
+
+    // Очистка
+    return () => {
+      cancelAnimationFrame(frameId);
+      renderer.dispose();
+      if (renderer.domElement && mountRef.current) {
+        mountRef.current.removeChild(renderer.domElement);
+      }
+    };
+  }, []);
+
+  return <div ref={mountRef} style={{ width: '100vw', height: '70vh' }} />;
 }
 
-function ARScene() {
-  return (
-    <ZapparCanvas style={{ width: '100vw', height: '60vh' }}>
-      <ZapparCamera />
-      {/* Можно использовать ImageTracker или InstantWorldTracker */}
-      <ambientLight intensity={0.8} />
-      <directionalLight position={[2, 2, 2]} intensity={1} />
-      <Model />
-      <OrbitControls />
-    </ZapparCanvas>
-  )
-}
-
-function App() {
-
-
+export default function App() {
   return (
     <>
-      {/* AR-сцена Zappar */}
-      <ARScene />
-      {/* Старый контент */}
-
+      <ARZappar />
     </>
-  )
+  );
 }
-
-export default App
