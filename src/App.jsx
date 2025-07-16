@@ -36,7 +36,7 @@ function ARZappar() {
 
     // Загрузка модели
     const loader = new GLTFLoader();
-    loader.load('/src/Cate2.glb', (gltf) => {
+    loader.load('./Cate2.glb', (gltf) => {
       model = gltf.scene;
       model.scale.set(1.5, 1.5, 1.5);
       model.position.set(0, 0, -5); // Перед камерой
