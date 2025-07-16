@@ -10,12 +10,14 @@ function ARZappar() {
   useEffect(() => {
     let renderer, scene, camera, zapparCamera, model;
     let frameId;
-    let imageTracker, imageAnchorGroup;
 
     // Renderer
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight * 0.7);
     mountRef.current.appendChild(renderer.domElement);
+
+    // ВАЖНО: связать GL context с Zappar pipeline
+    ZapparThree.glContextSet(renderer.getContext());
 
     // Scene
     scene = new THREE.Scene();
@@ -28,11 +30,6 @@ function ARZappar() {
     // Свет
     const light = new THREE.AmbientLight(0xffffff, 1);
     scene.add(light);
-
-    // Трекинг по изображению (можно убрать, если не нужен)
-    // imageTracker = new ZapparThree.ImageTrackerLoader().load('PATH_TO_YOUR_IMAGE_TRACKER');
-    // imageAnchorGroup = new ZapparThree.ImageAnchorGroup(zapparCamera, imageTracker);
-    // scene.add(imageAnchorGroup);
 
     // Загрузка модели
     const loader = new GLTFLoader();
@@ -76,8 +73,8 @@ function ARZappar() {
 
 export default function App() {
   return (
-    <>
-      <ARZappar />
-    </>
+      <>
+        <ARZappar />
+      </>
   );
 }
